@@ -1,0 +1,9 @@
+This scene consist of a simple playground for the character to move using the visible UI elements on screen. On Desktop you should be able to click over the elements and trigger different actions (not all actions are available due to the lack of multitouch). Needless to say that this scene was intended to work properly on mobile, still there is one trick you can do. 
+
+Trick: If you want to quickly test this out I recommend you to use UnityRemote. In case you don't know about it, UnityRemote will play the game in the Editor and in your phone screen at the same time! so you can use your device to test the scene. 
+
+1 - Download and install the App "Unity Remote" to your phone (Android/iOS).
+2 - Make sure you have enabled the "USB Debugging" option (Developer mode).
+3 - Select your device by going to "Project Settings/Editor/Device". 
+4 - Connect your device to your computer while in the editor
+5 - Hit play and wait ... The game now should appear on your phone.
