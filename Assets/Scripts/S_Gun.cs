@@ -9,14 +9,15 @@ namespace Lightbug.CharacterControllerPro.Core
 public class S_Gun : MonoBehaviour
 {
     public GameObject bullet;
-    public enum shootDirectionTypes // your custom enumeration
+    public List<GameObject> bullets;
+    public enum shootDirectionTypes
     {
         random, 
         towardsPlayer,
         given
     };
     public shootDirectionTypes shootDirectionType = shootDirectionTypes.random;
-    public enum gunStates // your custom enumeration
+    public enum gunStates
     {
         idle, 
         shooting,
@@ -28,23 +29,25 @@ public class S_Gun : MonoBehaviour
     int lastShootTick, shootsInBatch, lastBatchTick;
     public int shootsPerBatch, shootTicks, batchTicks;
     public float shellSpreadArch;
+    public float angleVariance;
     Lightbug.CharacterControllerPro.Core.CharacterActor characterActor;
 
-    // Start is called before the first frame update
+    void Awake()
+    {
+        bullets = new List<GameObject>();
+    }
+
     void Start()
     {
         state = gunStates.idle;
         shootsInBatch = 0;
         lastBatchTick = S_World.tick;
         characterActor = GameObject.FindWithTag("Player").GetComponent<CharacterActor>();
-        
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (state == gunStates.shooting)
-        {
+        if (state == gunStates.shooting) {
             if (shootsInBatch == shootsPerBatch) {
                 EndBatch();
             } else if (S_World.tick - lastShootTick >= shootTicks && shootsInBatch < shootsPerBatch) {
@@ -72,7 +75,7 @@ public class S_Gun : MonoBehaviour
         }
     }
 
-    void Shoot() 
+    protected void Shoot() 
     {
         shootsInBatch += 1;
         lastShootTick = S_World.tick;
@@ -92,9 +95,11 @@ public class S_Gun : MonoBehaviour
                 Vector3 horizontal = Vector3.right + Vector3.forward;
                 Vector3 toPlayerDirection = (player.transform.position - gameObject.transform.position).normalized;
                 float deltaAngle = 0f;
-                if (shellBullets > 1)
+                if (shellBullets > 1) {
                     deltaAngle = shellSpreadArch*2.0f/(shellBullets-1);
-                toPlayerDirection = Quaternion.AngleAxis(-shellSpreadArch+deltaAngle*i,Vector3.up)*toPlayerDirection;
+                    toPlayerDirection = Quaternion.AngleAxis(-shellSpreadArch+deltaAngle*i,Vector3.up)*toPlayerDirection;
+                }
+                toPlayerDirection = Quaternion.AngleAxis(Random.Range(-1f,1f)*angleVariance,Vector3.up)*toPlayerDirection;
                 shootDirection = Vector3.Scale(toPlayerDirection,horizontal);
                 bs.initialRotation = Quaternion.LookRotation(characterActor.Forward).normalized;
             }
@@ -103,13 +108,26 @@ public class S_Gun : MonoBehaviour
                 //
             } 
             bs.moveDirection = shootDirection;
-            bs.MoveSpeed = 10.0f;
         }
     }
 
-    S_Bullet CreateBullet() {
+    protected S_Bullet CreateBullet() {
         GameObject b = Instantiate(bullet) as GameObject;
+        bullets.Add(b);
+        b.GetComponent<S_Bullet>().owner = gameObject;
+        Physics.IgnoreCollision(b.GetComponent<Collider>(), gameObject.transform.parent.gameObject.GetComponent<Collider>());
+        GameObject[] all_bullets = GameObject.FindGameObjectsWithTag("Bullet");
+        foreach (GameObject bullet in all_bullets)
+        {
+            Physics.IgnoreCollision(b.GetComponent<Collider>(), bullet.GetComponent<Collider>());
+        }
+        GameObject[] borders = GameObject.FindGameObjectsWithTag("TerrainBorder");
+        foreach (GameObject border in borders)
+        {
+            Physics.IgnoreCollision(b.GetComponent<Collider>(), border.GetComponent<Collider>());
+        }
         b.transform.position = this.transform.position;
+        b.transform.position += new Vector3(0f, 1f, 0f);
         return b.GetComponent<S_Bullet>();
     }
 }

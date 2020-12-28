@@ -1,0 +1,29 @@
+{
+    "level": 2,
+    "enemies":
+    [
+        {
+            "coords": "t13",
+            "name": "Shooter"
+        },
+        {
+            "coords": "t11",
+            "name": "Shooter"
+        },
+        {
+            "coords": "t31",
+            "name": "Shooter"
+        },
+        {
+            "coords": "t33",
+            "name": "Shooter"
+        }
+    ],
+    "height":
+    [
+        {
+            "coords": "m,m",
+            "height": 1
+        }
+    ]
+}

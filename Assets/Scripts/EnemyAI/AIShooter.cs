@@ -13,18 +13,21 @@ public class AIShooter : CharacterAIBehaviour
 {
     bool moving;
     S_Gun gun;
+    S_ShieldGun shieldGun;
     public enum movementTypes // your custom enumeration
     {
         random, 
         nextTiles,
         nextTilesOrigin,
-        insideCircle
+        insideCircle,
+        diagonal
     };
     public movementTypes movementType = movementTypes.random;
 
     public float moveSpeedTop;
     public int moveTicks, moveTicksVariance, directionVariance;
-    public int shootToMoveTicks, stopToShootTicks;
+    public int shootToMoveTicks, shieldToMoveTicks, stopToShootTicks;
+    public float shieldProb;
 
     [Min( 0f )]
     [SerializeField]
@@ -71,6 +74,7 @@ public class AIShooter : CharacterAIBehaviour
     {
         initialPosition = transform.position;
         gun = GetComponent<S_Gun>();
+        shieldGun = GetComponent<S_ShieldGun>();
         S_World.events.Add(new Event(
             gameObject, 
             10, 
@@ -84,18 +88,29 @@ public class AIShooter : CharacterAIBehaviour
         SetTarget();
     }
 
-    void Stop() {
+    public void Stop() {
         moving = false;
         characterActions.Reset();
-        S_World.events.Add(new Event(
-                gameObject, 
-                stopToShootTicks, 
-                Shoot, 
-                recurrent_: false, 
-                variance_: 0));
+        if (Random.value < shieldProb) {
+            S_World.events.Add(new Event(gameObject, stopToShootTicks, Shield));
+        } else {
+            S_World.events.Add(new Event(gameObject, stopToShootTicks, Shoot));
+        }
     }
 
-    void Shoot() {
+    void Shield()
+    {
+        shieldGun.StartBatch();
+        S_World.events.Add(new Event(
+            gameObject, 
+            shieldToMoveTicks, 
+            Move, 
+            recurrent_: false, 
+            variance_: 0));
+    }
+
+    void Shoot()
+    {
         gun.StartBatch();
         S_World.events.Add(new Event(
             gameObject, 
@@ -104,6 +119,7 @@ public class AIShooter : CharacterAIBehaviour
             recurrent_: false, 
             variance_: 0));
     }
+    
     public override void UpdateBehaviour( float dt )
     {
         if (moving) {
@@ -121,6 +137,8 @@ public class AIShooter : CharacterAIBehaviour
 	{
         //Stop();
     }
+
+
     
     void SetTarget()
     {
@@ -131,7 +149,7 @@ public class AIShooter : CharacterAIBehaviour
             } else if (movementType == movementTypes.nextTilesOrigin) {
                 target = initialPosition + Quaternion.AngleAxis(Random.Range(0,4)*90f,Vector3.up) * Vector3.left * S_Terrain.tileWidth;
             } else if (movementType == movementTypes.insideCircle) {
-                target = initialPosition + Quaternion.AngleAxis(Random.Range(0f,360f),Vector3.up) * Vector3.left * S_Terrain.tileWidth;
+                target = initialPosition + Quaternion.AngleAxis(Random.Range(0f,360f),Vector3.up) * Vector3.left * Random.Range( minRandomMagnitude , maxRandomMagnitude );
             } else if (movementType == movementTypes.nextTiles) {
                 target = characterActor.Position + Quaternion.AngleAxis(Random.Range(0,4)*90f,Vector3.up) * Vector3.left * S_Terrain.tileWidth;
             }
@@ -139,6 +157,15 @@ public class AIShooter : CharacterAIBehaviour
                 break;
             }
             tries += 1;
+        }
+    }
+
+    public override void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.tag == "Block") {
+            // Notice here that collision could also come from block from the top,
+            // but that one is handelled on block and kills the enemy immediately.
+            Stop();
         }
     }
 }

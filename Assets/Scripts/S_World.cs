@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class S_World : MonoBehaviour
 {
-    public float time;
+    static public float time;
 
     public int year;
 
@@ -39,6 +39,7 @@ public class S_World : MonoBehaviour
 
     public static event EventHandler<OnTickEventArgs> OnTick;
 
+    static public int score;
     static public int tick;
 
     static public Dictionary<string, int> energy;
@@ -46,7 +47,8 @@ public class S_World : MonoBehaviour
 
     void Awake()
     {
-        time = daySecondsLength*monthDaysLength*1.5f;
+        time = 0f;
+        score = 0;
         selectedObject = null;
         events = new EventHandler();
         tick = 0;
@@ -57,7 +59,7 @@ public class S_World : MonoBehaviour
             {"fire",100},
             {"life",100}
         };
-        terrain = Instantiate(GO_Terrain);
+        terrain = GameObject.Find("Terrain");
         lastTickTime = 0.0f;
         uiState = UI_STATES["Idle"];
         events.Add(new Event(gameObject, Config.Fire_Drain_Ticks, DrainFireEnergy, true));
@@ -90,6 +92,10 @@ public class S_World : MonoBehaviour
 
     static public void SelectObject(GameObject objectToSelect) {
         selectedObject = objectToSelect;
+    }
+
+    static public void AddScore(int s) {
+        score += s;
     }
  
     void Update()

@@ -4,23 +4,30 @@ using UnityEngine;
 
 public class S_Bullet : MonoBehaviour
 {
-    public float MoveSpeed;
+    public float moveSpeed;
+    public float destroySeconds;
     public Vector3 moveDirection;
     public Quaternion initialRotation;
     public float power;
     protected Rigidbody rb;
     public bool collideWithTerrain;
+    public bool bounce;
+    Vector3 lastPosition;
+    public GameObject owner;
     // Start is called before the first frame update
     protected void Start()
     {
         rb = GetComponent<Rigidbody>();
-        collideWithTerrain = false;
+        rb.AddRelativeForce(moveDirection * moveSpeed);
     }
 
     // Update is called once per frame
     void Update()
     {
-        //
+        destroySeconds -= Time.deltaTime;
+        if (destroySeconds < 0) {
+            Eliminate();
+        }
     }
 
     private void HitHero(GameObject other)
@@ -33,28 +40,19 @@ public class S_Bullet : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnCollisionEnter(Collision collision)
     {
-        if (other.tag == "Player") {
-            HitHero(other.gameObject);
-        } else if (other.tag == "Outside") {
+        if (collision.gameObject.tag == "Player") {
+            HitHero(collision.gameObject);
+        } else if (collision.gameObject.tag == "Outside") {
             Destroy(gameObject);
-        } else if (other.tag == "TerrainTile" && collideWithTerrain) {
-            Destroy(gameObject);
-        }
-    }
-
-    private void OnTriggerStay(Collider other)
-    {
-        // For cases when the player is quiting rolling state inside bullet.
-        if (other.tag == "Player") {
-            HitHero(other.gameObject);
         }
     }
 
     void FixedUpdate()
     {
-        rb.MovePosition(transform.position+moveDirection*MoveSpeed*Time.fixedDeltaTime);
+        lastPosition = transform.position;
+        //rb.MovePosition(transform.position+moveDirection*MoveSpeed*Time.fixedDeltaTime);
     }
 
 }

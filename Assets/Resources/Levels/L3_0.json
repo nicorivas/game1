@@ -1,0 +1,17 @@
+{
+    "level": 3,
+    "enemies":
+    [
+        {
+            "coords": "t33",
+            "name": "WalkerRandom"
+        }
+    ],
+    "height":
+    [
+        {
+            "coords": "m,m",
+            "height": 1
+        }
+    ]
+}

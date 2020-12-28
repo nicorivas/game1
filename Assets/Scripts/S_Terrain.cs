@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using System.IO;
 
 public class S_Terrain : MonoBehaviour
 {
-    static public int tilesN = 11;
+    static public int tilesN = 9;
     static public float tileWidth = 2.0f;
     static public float tileDepth = 2.0f;
-    int terrainUpdateTicks = 10;
-    int numberOfMountains = 2;
     bool firstTick;
     static GameObject[,] tiles;
     static List<GameObject> tilesList;
+    static List<GameObject> blocks;
     public GameObject terrainTile;
     static public int[,] DIRECTIONS = {{1,0},{-1,0},{0,1},{0,-1}};
     static public Dictionary<string, int> TERRAIN_TYPES = new Dictionary<string, int> {
@@ -22,19 +22,52 @@ public class S_Terrain : MonoBehaviour
             {"polar",3},
             {"plains",4},
         };
+
     void Start()
     {
-        // Register Tick function
         S_World.OnTick += Tick;
-        tiles = new GameObject[tilesN,tilesN];
-        tilesList = new List<GameObject>();
-        firstTick = true;
+        Initialize();
     }
 
-    static public void SpawnEnemy(int[] coords, GameObject enemy) {
+    void Initialize() {
+        tiles = new GameObject[tilesN,tilesN];
+        tilesList = new List<GameObject>();
+        blocks = new List<GameObject>();
+        firstTick = true;
+        GenerateTerrain();
+        S_TerrainTile t11;
+        for (int ix=0; ix<tilesN; ix++) {
+            for (int iz=0; iz<tilesN; iz++) {
+                t11 = tiles[ix,iz].GetComponent<S_TerrainTile>();
+                t11.LoadType();
+            }
+        }
+    }
+
+    public void ResetTerrain()
+    {
+        foreach (GameObject tile in tilesList) {
+            Destroy(tile);
+        }
+        foreach (GameObject block in blocks) {
+            Destroy(block);
+        }
+        Initialize();
+    }
+
+    static public void SpawnBlock(Vector2Int coords)
+    {
+        GameObject block = Instantiate(Resources.Load("Block")) as GameObject;
+        block.transform.position = tiles[coords[0],coords[1]].transform.position;
+        block.transform.position += Vector3.up*Config.Block_Spawn_Height;
+        block.GetComponent<Rigidbody>().velocity = new Vector3(0f, -10f, 0f);
+        blocks.Add(block);
+    }
+
+    static public void SpawnEnemy(Vector2Int coords, string enemyName) {
         coords = CoordsTransform(coords);
-        GameObject spawner = Instantiate(Resources.Load(Config.Enemies_Dir+"/Spawner")) as GameObject;
-        spawner.GetComponent<S_Spawner>().enemy = enemy;
+        GameObject spawner = Instantiate(Resources.Load(Path.Combine(Config.Enemies_Dir,"Spawner"))) as GameObject;
+        spawner.GetComponent<S_Spawner>().enemyName = enemyName;
         spawner.GetComponent<S_Spawner>().tile = tiles[coords[0],coords[1]];
         tiles[coords[0],coords[1]].GetComponent<S_TerrainTile>().PlaceEnemy(spawner);
     }
@@ -48,7 +81,15 @@ public class S_Terrain : MonoBehaviour
         tiles[coords[0],coords[1]].GetComponent<S_TerrainTile>().Rise(height);
     }
 
-    static public int[] CoordsTransform(int[] coords) {
+    static public void LevelHeight() {
+        //
+    }
+
+    static public void BurnTile(Vector2Int coords) {
+        tiles[coords[0],coords[1]].GetComponent<S_TerrainTile>().Burn();
+    }
+
+    static public Vector2Int CoordsTransform(Vector2Int coords) {
         if (coords[0] < 0) coords[0] += tilesN;
         if (coords[1] < 0) coords[1] += tilesN;
         return coords;
@@ -56,8 +97,6 @@ public class S_Terrain : MonoBehaviour
 
     void GenerateTerrain()
     {
-        // Debug.Log("S_Terrain:GenerateTerrain");    
-        // Create terrain tiles.
         for (int i=0; i < tilesN; i++) {
             for (int j=0; j < tilesN; j++) {
                 GameObject terrainTile = CreateTerrainTile(i,j);
@@ -65,130 +104,36 @@ public class S_Terrain : MonoBehaviour
                 terrainTile.GetComponent<S_TerrainTile>().CalculateType();
             }
         }
-        //CreateHeight();
-        //CreateRivers();
-        //CreateTrees();
         for (int i=0; i < tilesN; i++) {
             for (int j=0; j < tilesN; j++) {
                 tiles[i,j].GetComponent<S_TerrainTile>().LoadType();
             }
         }
-        //Spawn();
     }
 
-    void CreateHeight() {
-        Debug.Log("S_Terrain:CreateHeight");
-        for (int ix=0; ix < tilesN; ix++) {
-            for (int iz=0; iz < tilesN; iz++) {
-                tiles[ix,iz].GetComponent<S_TerrainTile>().SetHeight(0);
-            }
-        }
-        for (int i=0; i < numberOfMountains; i++) {
-            if (i==0)
-                CreateMountainRange(volcano:true);
-            else
-                CreateMountainRange(mountain:true);
-        }
-        // Soften
-        int dxi, dxf, dzi, dzf;
-        for (int ix=0; ix < tilesN; ix++) {
-            for (int iz=0; iz < tilesN; iz++) {
-                int currentHeight = tiles[ix,iz].GetComponent<S_TerrainTile>().GetHeight();
-                dxi = -1;
-                dxf = 1;
-                dzi = -1;
-                dzf = 1;
-                if (ix==0)
-                    dxi = 1;
-                if (ix==tilesN-1)
-                    dxf = -1;
-                if (iz==0)
-                    dzi = 1;
-                if (iz==tilesN-1)
-                    dzf = -1;
-                if (tiles[ix+dxi,iz].GetComponent<S_TerrainTile>().GetHeight() > currentHeight &&
-                    tiles[ix+dxf,iz].GetComponent<S_TerrainTile>().GetHeight() > currentHeight &&
-                    tiles[ix,iz+dzi].GetComponent<S_TerrainTile>().GetHeight() > currentHeight &&
-                    tiles[ix,iz+dzf].GetComponent<S_TerrainTile>().GetHeight() > currentHeight) {
-                    tiles[ix,iz].GetComponent<S_TerrainTile>().SetHeight(currentHeight+1);
-                }
-            }
-        }
+    GameObject CreateTerrainTile(int x, int z) {
+        float px = (x-tilesN/2.0f)*tileWidth+tileWidth/2.0f;
+        float pz = (z-tilesN/2.0f)*tileDepth+tileDepth/2.0f;
+        tiles[x,z] = Instantiate(terrainTile);
+        tiles[x,z].transform.parent = transform;
+        tiles[x,z].transform.position = new Vector3(px,0.0f,pz);
+        S_TerrainTile tileScript = tiles[x,z].GetComponent<S_TerrainTile>();
+        tileScript.SetPosition(x,z);
+        tilesList.Add(tiles[x,z]);
+        return tiles[x,z];
+
     }
 
-    void CreateMountainRange(bool volcano = false, bool mountain = false) {
-        int[] coords;
-        if (volcano)
-            coords = GetRandomCoordinatesInsideRegion(Config.Volcano_Init_Region);
-        else
-            coords = GetRandomCoordinatesInsideRegion(Config.Mountain_Init_Region);
-        S_TerrainTile tileScript = tiles[coords[0],coords[1]].GetComponent<S_TerrainTile>();
-        tileScript.SetHeight(2);
-        if (volcano)
-            tileScript.CreateVolcano();
-        if (mountain)
-            tileScript.CreateMountain();
-        for (int ix=coords[0]-2; ix <= coords[0]+2; ix++) {
-            for (int iz=coords[1]-2; iz <= coords[1]+2; iz++) {
-                if (ix==coords[0] && iz==coords[1]) continue;
-                if (CoordinateInside(ix,iz)) {
-                    if (Random.value < 0.5) {
-                        tileScript = tiles[ix,iz].GetComponent<S_TerrainTile>();
-                        tileScript.SetHeight(1);
-                    }
-                }
-            }
-        }
-    }
-
-    void CreateRivers() {
-        List<GameObject> mountains = tilesList.FindAll(t => t.GetComponent<S_TerrainTile>().GetHeight() == 2);
-        foreach (GameObject mountain in mountains) {
-            if (!mountain.GetComponent<S_TerrainTile>().HasTerrainObjectByTag("Volcano")) {
-                int riverLength = 0;
-                int tries = 0;
-                S_TerrainTile next;
-                S_TerrainTile current = mountain.GetComponent<S_TerrainTile>();
-                while (riverLength < 20 && tries < 1000) {
-                    tries++;
-                    current.SetAndLoadType(TERRAIN_TYPES["river"]);
-                    if (current.x == 0 || current.z == 0 || current.x == tilesN-1 || current.z == tilesN-1)
-                        break;
-                    if (riverLength>10)
-                        break;
-                    //next = GetRandomTileUntilDistance(current.x, current.z, 0.7f).GetComponent<S_TerrainTile>();
-                    next = GetTile(current.x, current.z-1).GetComponent<S_TerrainTile>();
-                    if (next.GetTileType()==TERRAIN_TYPES["river"])
-                        continue;
-                    //if (next.GetHeight() > current.GetHeight())
-                    //    continue;
-                    current = next;
-                    riverLength++;
-                }
-                break;
-            }
-        }
-    }
-
-    void CreateTrees() {
-        GameObject tile =  GetRandomTileInsideRegion(
-            Config.Tree_Init_Region,
-            not_types:new int[]{S_Terrain.TERRAIN_TYPES["river"]},
-            heights:new int[]{0});
-        GameObject tree = tile.GetComponent<S_TerrainTile>().CreateTree();
-        tree.GetComponent<S_Tree>().SetLifeEnergy(Config.Tree_Init_Life_Level);
-    }
-
-    static int[] GetRandomCoordinatesInsideRegion(float[] region) {
-        int[] coords = new int[] {
+    static Vector2Int GetRandomCoordinatesInsideRegion(float[] region) {
+        Vector2Int coords = new Vector2Int(
             (int)(Random.Range(region[0],region[2])*tilesN),
-            (int)(Random.Range(region[1],region[3])*tilesN)};
+            (int)(Random.Range(region[1],region[3])*tilesN));
         return coords;
     }
 
     static GameObject GetRandomTileInsideRegion(float[] region, int[] not_types=null, int[] heights=null) {
         int count = 0;
-        int[] coords = null;
+        Vector2Int coords = default(Vector2Int);
         while (count < 100) {
             coords = GetRandomCoordinatesInsideRegion(region);
             if (!heights.Contains(tiles[coords[0],coords[1]].GetComponent<S_TerrainTile>().GetHeight()))
@@ -205,117 +150,6 @@ public class S_Terrain : MonoBehaviour
 
     bool CoordinateInside(int x, int z) {
         return x >= 0 && z >= 0 && x < tilesN && z < tilesN;
-    }
-
-    GameObject CreateTerrainTile(int x, int z) {
-        float px = (x-tilesN/2.0f)*tileWidth+tileWidth/2.0f;
-        float pz = (z-tilesN/2.0f)*tileDepth+tileDepth/2.0f;
-        tiles[x,z] = Instantiate(terrainTile);
-        tiles[x,z].transform.parent = transform;
-        tiles[x,z].transform.position = new Vector3(px,0.0f,pz);
-        S_TerrainTile tileScript = tiles[x,z].GetComponent<S_TerrainTile>();
-        tileScript.SetPosition(x,z);
-        tilesList.Add(tiles[x,z]);
-        return tiles[x,z];
-
-    }
-
-    public static void CalculateWind() {
-        // Wind is computed as the gradient of temperature.
-        S_TerrainTile t11,t01,t21,t10,t12;
-        for (int ix=1; ix < tilesN-1; ix++) {
-            for (int iz=1; iz < tilesN-1; iz++) {
-                // Using second symmetric differences
-                t11 = tiles[ix,iz].GetComponent<S_TerrainTile>();
-                t01 = tiles[ix-1,iz].GetComponent<S_TerrainTile>();
-                t21 = tiles[ix+1,iz].GetComponent<S_TerrainTile>();
-                t10 = tiles[ix,iz-1].GetComponent<S_TerrainTile>();
-                t12 = tiles[ix,iz+1].GetComponent<S_TerrainTile>();
-                t11.wind = new Vector2(
-                    (t01.temperature-0f*t11.temperature-t21.temperature),
-                    (t10.temperature-0f*t11.temperature-t12.temperature));
-            }
-        }
-        // x=0, x=tilesN-1
-        for (int iz=1; iz < tilesN-1; iz++) {
-            t11 = tiles[0,iz].GetComponent<S_TerrainTile>();
-            t21 = tiles[1,iz].GetComponent<S_TerrainTile>();
-            t10 = tiles[0,iz-1].GetComponent<S_TerrainTile>();
-            t12 = tiles[0,iz+1].GetComponent<S_TerrainTile>();
-            t11.wind = new Vector2(
-                (t11.temperature-t21.temperature),
-                (t10.temperature-0f*t11.temperature-t21.temperature)
-            );
-            t11 = tiles[tilesN-1,iz].GetComponent<S_TerrainTile>();
-            t01 = tiles[tilesN-2,iz].GetComponent<S_TerrainTile>();
-            t10 = tiles[tilesN-1,iz-1].GetComponent<S_TerrainTile>();
-            t12 = tiles[tilesN-1,iz+1].GetComponent<S_TerrainTile>();
-            t11.wind = new Vector2(
-                (t01.temperature-t11.temperature),
-                (t10.temperature-0f*t11.temperature-t12.temperature)
-            );
-        }
-        // z=0, z=tilesN-1
-        for (int ix=1; ix < tilesN-1; ix++) {
-            t01 = tiles[ix-1,0].GetComponent<S_TerrainTile>();
-            t11 = tiles[ix,0].GetComponent<S_TerrainTile>();
-            t21 = tiles[ix+1,0].GetComponent<S_TerrainTile>();
-            t12 = tiles[ix,1].GetComponent<S_TerrainTile>();
-            t11.wind = new Vector2(
-                (t01.temperature-0f*t11.temperature-t21.temperature),
-                (t11.temperature-t12.temperature)
-            );
-            t01 = tiles[ix-1,tilesN-1].GetComponent<S_TerrainTile>();
-            t11 = tiles[ix,tilesN-1].GetComponent<S_TerrainTile>();
-            t21 = tiles[ix+1,tilesN-1].GetComponent<S_TerrainTile>();
-            t10 = tiles[ix,tilesN-2].GetComponent<S_TerrainTile>();
-            t11.wind = new Vector2(
-                (t01.temperature-0f*t11.temperature-t21.temperature),
-                (t11.temperature-t10.temperature)
-            );
-        }
-        
-    }
-
-    void MoveHumidity() {
-        S_TerrainTile t11,t01,t21,t10,t12;
-        float factor = 0.1f;
-        float[,] humTemp = new float[tilesN,tilesN];
-        for (int ix=0; ix < tilesN; ix++) {
-            for (int iz=0; iz < tilesN; iz++) {
-                humTemp[ix,iz] = 0f;
-            }
-        }
-        for (int ix=1; ix < tilesN-1; ix++) {
-            for (int iz=1; iz < tilesN-1; iz++) {
-                t11 = tiles[ix,iz].GetComponent<S_TerrainTile>();
-                t01 = tiles[ix-1,iz].GetComponent<S_TerrainTile>();
-                t21 = tiles[ix+1,iz].GetComponent<S_TerrainTile>();
-                t10 = tiles[ix,iz-1].GetComponent<S_TerrainTile>();
-                t12 = tiles[ix,iz+1].GetComponent<S_TerrainTile>();
-                humTemp[ix,iz] += t11.humidity;
-                if (t11.wind.x > 0) {
-                    humTemp[ix+1,iz] += t11.humidity*t11.wind.x*factor;
-                    humTemp[ix,iz] -= t11.humidity*t11.wind.x*factor;
-                } else {
-                    humTemp[ix-1,iz] += t11.humidity*Mathf.Abs(t11.wind.x)*factor;
-                    humTemp[ix,iz] -= t11.humidity*Mathf.Abs(t11.wind.x)*factor;
-                }
-                if (t11.wind.y > 0) {
-                    humTemp[ix,iz+1] += t11.humidity*t11.wind.y*factor;
-                    humTemp[ix,iz] -= t11.humidity*t11.wind.y*factor;
-                } else {
-                    humTemp[ix,iz-1] += t11.humidity*Mathf.Abs(t11.wind.y)*factor;
-                    humTemp[ix,iz] -= t11.humidity*Mathf.Abs(t11.wind.y)*factor;
-                }
-            }
-        }
-        for (int ix=0; ix < tilesN; ix++) {
-            for (int iz=0; iz < tilesN; iz++) {
-                t11 = tiles[ix,iz].GetComponent<S_TerrainTile>();
-                t11.humidity = humTemp[ix,iz];
-            }
-        }
     }
 
     public GameObject GetTile(int x, int z) {
@@ -367,29 +201,7 @@ public class S_Terrain : MonoBehaviour
 
     private void Tick(object sender, S_World.OnTickEventArgs e)
     {
-        S_TerrainTile t11;
-        if (firstTick) {
-            firstTick = false;
-            GenerateTerrain();
-            for (int ix=0; ix<tilesN; ix++) {
-                for (int iz=0; iz<tilesN; iz++) {
-                    t11 = tiles[ix,iz].GetComponent<S_TerrainTile>();
-                    t11.LoadType();
-                }
-            }
-        }
-        if (S_World.tick%terrainUpdateTicks==0) {
-            for (int ix=0; ix<tilesN; ix++) {
-                for (int iz=0; iz<tilesN; iz++) {
-                    t11 = tiles[ix,iz].GetComponent<S_TerrainTile>();
-                    t11.CalculateTemperature();
-                    t11.CalculateHumidity();
-                    t11.CalculateType();
-                }
-            }
-            CalculateWind();
-            //MoveHumidity();
-        }
+        //
     }
 
     static public bool PositionInside(Vector3 pos) {
@@ -400,6 +212,35 @@ public class S_Terrain : MonoBehaviour
                 return false;
         }
         return true;
+    }
+
+    static public Vector2Int ParseCoords(string str) {
+        if (str.Contains(",")) {
+            string[] coordsstr = str.Split(',');
+            Vector2Int coords = new Vector2Int(0,0);
+            for (int i=0; i < coordsstr.Length; i++) {
+                if (coordsstr[i] == "m") {
+                    coords[i] = (tilesN-1)/2;
+                } else {
+                    int c;
+                    if (int.TryParse(coordsstr[i], out c)) {
+                        coords[i] = c;
+                    }
+                }
+            }
+            return CoordsTransform(coords);
+        } else if (str[0] == 't') {
+            int ix;
+            int iy;
+            int.TryParse(str[1].ToString(), out ix);
+            int.TryParse(str[2].ToString(), out iy);
+            float ixf = 0.0f+(ix-1)*1.0f/3.0f;
+            float iyf = 0.0f+(iy-1)*1.0f/3.0f;
+            float fxf = 0.0f+(ix)*1.0f/3.0f;
+            float fyf = 0.0f+(iy)*1.0f/3.0f;
+            return GetRandomCoordinatesInsideRegion(new float[]{ixf,iyf,fxf,fyf});
+        }
+        return new Vector2Int(0,0);
     }
 
     void OnDestroy() {

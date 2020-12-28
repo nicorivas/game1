@@ -117,12 +117,18 @@ public class S_TerrainTile : MonoBehaviour
 
     public void Stop() {
         speed = 0.0f;
-        Lightbug.CharacterControllerPro.Core.SceneController.Instance.RemoveActor(lift.GetComponent<Lightbug.CharacterControllerPro.Demo.ActionBasedPlatform>());
-        Destroy(lift);
+        DestroyLift();
         gameObject.transform.position = new Vector3(
             gameObject.transform.position.x,
             height*HEIGHT_DELTA,
             gameObject.transform.position.z);
+    }
+
+    public void DestroyLift() {
+        if (lift != null) {
+            Lightbug.CharacterControllerPro.Core.SceneController.Instance.RemoveActor(lift.GetComponent<Lightbug.CharacterControllerPro.Demo.ActionBasedPlatform>());
+            Destroy(lift);
+        }
     }
 
     public int GetHeight() {
@@ -316,6 +322,7 @@ public class S_TerrainTile : MonoBehaviour
     }
 
     public void PlaceEnemy(GameObject enemy) {
+        Debug.Log("PlaceEnemy: "+gameObject.transform.position.x+" "+gameObject.transform.position.z);
         enemy.transform.position = new Vector3(gameObject.transform.position.x,3f,gameObject.transform.position.z);
     }
 
@@ -339,6 +346,11 @@ public class S_TerrainTile : MonoBehaviour
         terrainObject.GetComponent<S_TerrainObject>().Place();
         objects.Add(terrainObject);
         return terrainObject;
+    }
+
+    public void Burn() {
+        GameObject tileDamage = Instantiate(Resources.Load("TileDamage")) as GameObject;
+        tileDamage.transform.position = new Vector3(gameObject.transform.position.x,1.0f,gameObject.transform.position.z);
     }
 
     public void EruptionStart() {
@@ -412,5 +424,10 @@ public class S_TerrainTile : MonoBehaviour
         if (gameObject.transform.position.y > originalPosition.y + height*HEIGHT_DELTA) {
             Stop();
         }
+    }
+
+    void OnDestroy()
+    {
+        DestroyLift();
     }
 }

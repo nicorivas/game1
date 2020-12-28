@@ -39,6 +39,8 @@ public abstract class CharacterAIBehaviour : MonoBehaviour
 
 		characterActions.movement.value = inputXZ;
 	}
+
+    public virtual void OnCollisionEnter(Collision collision) {}
 }
 
 }

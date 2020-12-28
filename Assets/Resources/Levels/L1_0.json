@@ -1,0 +1,14 @@
+{
+    "level": 1,
+    "enemies":
+    [
+        {
+            "coords": "t33",
+            "name": "Shooter"
+        },
+        {
+            "coords": "t11",
+            "name": "Shooter"
+        }
+    ]
+}

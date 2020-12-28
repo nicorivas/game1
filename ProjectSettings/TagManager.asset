@@ -32,6 +32,11 @@ TagManager:
   - Ledge
   - ContactRigidbody
   - Portal
+  - Damage
+  - TerrainBorder
+  - Bullet
+  - Shield
+  - Block
   layers:
   - Default
   - TransparentFX
@@ -41,8 +46,8 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
+  - Player
+  - Shields
   - 
   - 
   - 

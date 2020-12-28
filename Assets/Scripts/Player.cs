@@ -7,9 +7,15 @@ public class Player : MonoBehaviour
     static GameObject objectHeld;
     public static float shootRange = 40f;
     public static List<GameObject> targets;
-    public float health;
+    static public float health;
+    static public int maxHearts;
     public static Player instance;
     Vector3 originalPos;
+    void Awake()
+    {
+        maxHearts = 5;
+        health = 3f;
+    }
     void Start()
     {
         LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
@@ -17,12 +23,12 @@ public class Player : MonoBehaviour
         lineRenderer.widthMultiplier = 0.2f;
         lineRenderer.positionCount = 2;
         targets = new List<GameObject>();
-        health = 5f;
         instance = this;
         originalPos = gameObject.transform.position;
     }
 
-    public float GetHealth() {
+    static public float GetHealth()
+    {
         return health;
     }
 
@@ -37,6 +43,10 @@ public class Player : MonoBehaviour
         if (health <= 0) {
             GameOver();
         }
+    }
+
+    public void RestartLevel() {
+        transform.position = originalPos;
     }
 
     public void GameOver() {
@@ -55,32 +65,6 @@ public class Player : MonoBehaviour
         objectHeld = null;
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.tag == "Enemy") {
-            Hit(other.gameObject);
-        } else if (other.tag == "Range") {
-            targets.Add(other.transform.parent.gameObject);
-            GetComponent<LineRenderer>().positionCount = 2;
-        } else if (other.tag == "Portal") {
-            S_Director.NextLevel();
-            Destroy(other.gameObject);
-        }
-    }
-
-    public void RemoveTarget(GameObject target) {
-        targets.Remove(target);
-        GetComponent<LineRenderer>().positionCount = 0;
-
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.tag == "Range") {
-            RemoveTarget(other.transform.parent.gameObject);
-        }
-    }
-
     static public void Pickup(GameObject gameObject) {
         objectHeld = gameObject;
     }
@@ -93,13 +77,72 @@ public class Player : MonoBehaviour
         return objectHeld;
     }
 
+    private void OnTriggerStay(Collider other)
+    {
+        if (other.tag == "Damage") {
+            if (other.GetComponent<S_TileDamage>().damageActive) {
+                Hurt(10f);
+            };
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Enemy") {
+            Hit(other.gameObject);
+        } else if (other.tag == "Range") {
+            StartShoot(other.transform.parent.gameObject);
+        } else if (other.tag == "Portal") {
+            S_Director.NextLevel();
+            Destroy(other.gameObject);
+        } else if (other.tag == "Damage") {
+            if (other.GetComponent<S_TileDamage>().damageActive) {
+                Hurt(10f);
+            };
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.tag == "Range") {
+            RemoveTarget(other.transform.parent.gameObject);
+        }
+    }
+
+    void StartShoot(GameObject target) {
+        if (!targets.Contains(target)) {
+            targets.Add(target);
+            GetComponent<LineRenderer>().positionCount = 2;
+        }
+    }
+
+    public void RemoveTarget(GameObject target)
+    {
+        targets.Remove(target);
+        GetComponent<LineRenderer>().positionCount = 0;
+
+    }
+
     void Update() {
         for (int i=targets.Count-1; i>=0; i--) {
-            
             LineRenderer lineRenderer = GetComponent<LineRenderer>();
-            lineRenderer.SetPosition(0, new Vector3(gameObject.transform.position.x, 1.0f, gameObject.transform.position.z));
-            lineRenderer.SetPosition(1, new Vector3(targets[i].transform.position.x, 1.0f, targets[i].transform.position.z));
-            targets[i].GetComponent<S_Enemy>().Hit();
+            lineRenderer.positionCount = 2;
+            bool shootable = true;
+            Vector3 originPosition = new Vector3(gameObject.transform.position.x, 2.0f, gameObject.transform.position.z);
+            Vector3 targetPosition = targets[i].transform.Find("Spot").transform.position;
+            float distance = (originPosition-targetPosition).magnitude;
+            RaycastHit[] hits = Physics.RaycastAll(originPosition, targetPosition-originPosition, distance);
+            foreach (RaycastHit hit in hits) {
+                if (hit.transform.gameObject.tag == "Shield") {
+                    shootable = false;
+                    lineRenderer.positionCount = 0;
+                }
+            }
+            if (shootable) {
+                lineRenderer.SetPosition(0, originPosition);
+                lineRenderer.SetPosition(1, targetPosition);
+                targets[i].GetComponent<S_Enemy>().Hurt();
+            }
         }
     }
 

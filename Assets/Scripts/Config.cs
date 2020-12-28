@@ -48,6 +48,8 @@ public class Config : ScriptableObject
     static public float Humidity_Max = 10.0f;
     static public float Temperature_Max = 40.0f;
     static public float Temperature_Min = -10.0f;
+    //
+    static public float Block_Spawn_Height = 10f;
     // Mountain
     static public int Mountain_Level_Max = 5;
     // Volcano

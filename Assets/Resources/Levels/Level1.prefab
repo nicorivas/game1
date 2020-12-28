@@ -49,10 +49,13 @@ MonoBehaviour:
   enemyLocations:
   - coords: {x: 2, y: 2}
     enemy: {fileID: 7530739999836419085, guid: eb257d8086eeb4c0aa6418d23b2f26bd, type: 3}
-  - coords: {x: 8, y: 8}
-    enemy: {fileID: 2641304690551563531, guid: 19ae7d56e458846609aa3a3d69ee5794, type: 3}
+  - coords: {x: -2, y: -2}
+    enemy: {fileID: 7530739999836419085, guid: eb257d8086eeb4c0aa6418d23b2f26bd, type: 3}
   heightCoords:
   - coords: {x: 5, y: 5}
     height: 1
     enemies: 0
     initialEnemies: 0
+  burnRandomTiles: 0
+  burnRandomTilesTicks: 5
+  burnRandomTilesTicksVariance: 2
