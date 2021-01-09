@@ -1,84 +1,61 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Lightbug.CharacterControllerPro.Core
-{
-
-
-public class S_Gun : MonoBehaviour
+public class S_BulletGun : S_Gun
 {
     public GameObject bullet;
     public List<GameObject> bullets;
-    public enum shootDirectionTypes
-    {
-        random, 
-        towardsPlayer,
-        given
-    };
-    public shootDirectionTypes shootDirectionType = shootDirectionTypes.random;
-    public enum gunStates
-    {
-        idle, 
-        shooting,
-        reloading
-    };
-    gunStates state;
-    Vector3 shootDirection;
-    public int shellBullets;
-    int lastShootTick, shootsInBatch, lastBatchTick;
-    public int shootsPerBatch, shootTicks, batchTicks;
+    public int batchsPerShoot, batchTicks, shellBullets;
+    int batchsInShoot, lastBatchTick;
     public float shellSpreadArch;
     public float angleVariance;
-    Lightbug.CharacterControllerPro.Core.CharacterActor characterActor;
+    public bool upwards;
+    public float bulletSpeed;
 
     void Awake()
     {
+        base.Awake();
         bullets = new List<GameObject>();
     }
 
     void Start()
     {
-        state = gunStates.idle;
-        shootsInBatch = 0;
+        base.Start();
+        batchsInShoot = 0;
         lastBatchTick = S_World.tick;
-        characterActor = GameObject.FindWithTag("Player").GetComponent<CharacterActor>();
     }
+
 
     void Update()
     {
         if (state == gunStates.shooting) {
-            if (shootsInBatch == shootsPerBatch) {
-                EndBatch();
-            } else if (S_World.tick - lastShootTick >= shootTicks && shootsInBatch < shootsPerBatch) {
-                Shoot();
+            if (batchsInShoot == batchsPerShoot) {
+                StopShooting();
+            } else if (S_World.tick - lastBatchTick >= batchTicks && batchsInShoot < batchsPerShoot) {
+                Batch();
             }
-        }
-        
+        }   
     }
 
-    void EndBatch()
+    public override void StopShooting()
     {
-        state = gunStates.idle;
-        shootsInBatch = 0;
+        base.StopShooting();
+        batchsInShoot = 0;
     }
 
-    public void StartBatch(Vector3 direction=default(Vector3))
+    public override void Shoot(Vector3 direction=default(Vector3), GameObject target=default(GameObject))
     {
-        if (direction != default(Vector3))
-            shootDirection = direction;
-        if (S_World.tick - lastBatchTick >= batchTicks)
-        {
-            lastBatchTick = S_World.tick;
-            state = gunStates.shooting;
-            Shoot();
-        }
+        Debug.Log("Shoot");
+        base.Shoot();
+        Batch();
     }
 
-    protected void Shoot() 
+
+    protected void Batch() 
     {
-        shootsInBatch += 1;
-        lastShootTick = S_World.tick;
+        batchsInShoot += 1;
+        lastBatchTick = S_World.tick;
 
         for (int i=0; i<shellBullets; i++) {
 
@@ -107,7 +84,11 @@ public class S_Gun : MonoBehaviour
             {
                 //
             } 
+            if (upwards) {
+                shootDirection = new Vector3(shootDirection.x, 2.0f, shootDirection.z);
+            }
             bs.moveDirection = shootDirection;
+            bs.moveSpeed = bulletSpeed;
         }
     }
 
@@ -115,21 +96,8 @@ public class S_Gun : MonoBehaviour
         GameObject b = Instantiate(bullet) as GameObject;
         bullets.Add(b);
         b.GetComponent<S_Bullet>().owner = gameObject;
-        Physics.IgnoreCollision(b.GetComponent<Collider>(), gameObject.transform.parent.gameObject.GetComponent<Collider>());
-        GameObject[] all_bullets = GameObject.FindGameObjectsWithTag("Bullet");
-        foreach (GameObject bullet in all_bullets)
-        {
-            Physics.IgnoreCollision(b.GetComponent<Collider>(), bullet.GetComponent<Collider>());
-        }
-        GameObject[] borders = GameObject.FindGameObjectsWithTag("TerrainBorder");
-        foreach (GameObject border in borders)
-        {
-            Physics.IgnoreCollision(b.GetComponent<Collider>(), border.GetComponent<Collider>());
-        }
         b.transform.position = this.transform.position;
         b.transform.position += new Vector3(0f, 1f, 0f);
         return b.GetComponent<S_Bullet>();
     }
-}
-
 }

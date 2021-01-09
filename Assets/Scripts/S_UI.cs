@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class S_UI : MonoBehaviour
 {
+    static S_UI instance;
     GameObject canvasHearts;
     Text timeText;
     Text scoreText;
@@ -14,6 +15,7 @@ public class S_UI : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        instance = this;
         timeText = GameObject.Find("Time").GetComponent<Text>(); 
         timeText.text = "";
         scoreText = GameObject.Find("Score").GetComponent<Text>(); 
@@ -30,6 +32,20 @@ public class S_UI : MonoBehaviour
         float seconds = Mathf.FloorToInt(S_World.time % 60);
         timeText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
         scoreText.text = string.Format("{0:0000000}", S_World.score);
+    }
+
+    static public void ShowDescriptionMessage(string description) {
+        GameObject.Find("/Canvas/PowerDescription").GetComponent<CanvasGroup>().alpha = 1f;
+        GameObject.Find("/Canvas/PowerDescription").GetComponent<CanvasGroup>().blocksRaycasts = true;
+        Text descriptionText = GameObject.Find("/Canvas/PowerDescription/PowerDescriptionText").GetComponent<Text>();
+        descriptionText.text = description;
+        S_World.events.Add(new Event(instance.gameObject, Config.Ticks_Description_Message, HideDescriptionMessage));
+    }
+
+    static public void HideDescriptionMessage() {
+        GameObject.Find("/Canvas/PowerDescription").GetComponent<CanvasGroup>().alpha = 0f;
+        GameObject.Find("/Canvas/PowerDescription").GetComponent<CanvasGroup>().blocksRaycasts = false;
+
     }
 
     static public void GameOver() {

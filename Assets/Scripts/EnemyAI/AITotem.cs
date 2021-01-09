@@ -31,7 +31,7 @@ public class AITotem : CharacterAIBehaviour
             {
                 //Debug.DrawRay(transform.position, transform.TransformDirection(Vector3.forward) * 1000, Color.white);
                 if (hit.transform.gameObject.tag == "Player") {
-                    gun.StartBatch(direction);
+                    gun.Shoot(direction);
                 }
             }
         }

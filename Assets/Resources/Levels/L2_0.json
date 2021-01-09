@@ -18,12 +18,5 @@
             "coords": "t33",
             "name": "Shooter"
         }
-    ],
-    "height":
-    [
-        {
-            "coords": "m,m",
-            "height": 1
-        }
     ]
 }

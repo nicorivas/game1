@@ -5,13 +5,14 @@
         {
             "coords": "t33",
             "name": "WalkerRandom"
-        }
-    ],
-    "height":
-    [
+        },
         {
-            "coords": "m,m",
-            "height": 1
+            "coords": "t13",
+            "name": "WalkerRandom"
+        },
+        {
+            "coords": "t23",
+            "name": "WalkerRandom"
         }
     ]
 }

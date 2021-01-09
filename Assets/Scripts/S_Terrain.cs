@@ -77,8 +77,17 @@ public class S_Terrain : MonoBehaviour
         tiles[coords.x,coords.y].GetComponent<S_TerrainTile>().PlacePortal(portal);
     }
 
+    static public void SpawnPower(Vector2Int coords, string powerName) {
+        GameObject power = Instantiate(Resources.Load(Path.Combine(Config.Powers_Dir,powerName))) as GameObject;
+        tiles[coords.x,coords.y].GetComponent<S_TerrainTile>().PlacePower(power);
+    }
+
     static public void RiseTile(Vector2Int coords, int height) {
         tiles[coords[0],coords[1]].GetComponent<S_TerrainTile>().Rise(height);
+    }
+
+    static public void SinkTile(Vector2Int coords) {
+        tiles[coords[0],coords[1]].GetComponent<S_TerrainTile>().Sink();
     }
 
     static public void LevelHeight() {
@@ -122,6 +131,11 @@ public class S_Terrain : MonoBehaviour
         tilesList.Add(tiles[x,z]);
         return tiles[x,z];
 
+    }
+
+    public static Vector2Int GetRandomCoordinates() {
+        Vector2Int coords = GetRandomCoordinatesInsideRegion(new float[]{0f,0f,1f,1f});
+        return coords;
     }
 
     static Vector2Int GetRandomCoordinatesInsideRegion(float[] region) {

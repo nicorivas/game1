@@ -1,0 +1,18 @@
+{
+    "level": 3,
+    "enemies":
+    [
+        {
+            "coords": "t33",
+            "name": "WalkerDiagonal"
+        },
+        {
+            "coords": "t13",
+            "name": "WalkerDiagonal"
+        },
+        {
+            "coords": "t23",
+            "name": "WalkerDiagonal"
+        }
+    ]
+}

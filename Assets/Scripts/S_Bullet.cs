@@ -12,9 +12,19 @@ public class S_Bullet : MonoBehaviour
     protected Rigidbody rb;
     public bool collideWithTerrain;
     public bool bounce;
+    public bool explosive;
     Vector3 lastPosition;
     public GameObject owner;
     // Start is called before the first frame update
+    void Awake() {
+        gameObject.layer = 11;
+        // Ignore collisions with borders of the map (invisible ones)
+        GameObject[] borders = GameObject.FindGameObjectsWithTag("TerrainBorder");
+        foreach (GameObject border in borders)
+        {
+            Physics.IgnoreCollision(gameObject.GetComponent<Collider>(), border.GetComponent<Collider>());
+        }
+    }
     protected void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -40,12 +50,24 @@ public class S_Bullet : MonoBehaviour
         Destroy(gameObject);
     }
 
+    void Explode() {
+        GameObject explosion = Instantiate(Resources.Load("Explosion")) as GameObject;
+        explosion.transform.position = gameObject.transform.position;
+        Eliminate();
+    }
+
     private void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.tag == "Player") {
             HitHero(collision.gameObject);
         } else if (collision.gameObject.tag == "Outside") {
-            Destroy(gameObject);
+            Eliminate();
+        } else if (collision.gameObject.tag == "Block") {
+            collision.gameObject.GetComponent<S_Block>().Hurt(power);
+        } else if (collision.gameObject.tag == "TerrainTile") {
+            if (explosive) {
+                Explode();
+            }
         }
     }
 

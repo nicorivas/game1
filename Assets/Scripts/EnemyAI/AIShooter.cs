@@ -29,51 +29,17 @@ public class AIShooter : CharacterAIBehaviour
     public int shootToMoveTicks, shieldToMoveTicks, stopToShootTicks;
     public float shieldProb;
 
-    [Min( 0f )]
-    [SerializeField]
     float minRandomMagnitude = 1f;
-
-    [Min( 0f )]
-    [SerializeField]
     float maxRandomMagnitude = 1f;
-
-    [Min( 0f )]
-    [SerializeField]
-    float minRandomYawAngle = 100f;
-
-    [Min( 0f )]
-    [SerializeField]
-    float maxRandomYawAngle = 280f;
-
-    [Min( 0f )]
-    [SerializeField]
-    float waitSeconds = 3f;
-    
-    float timer = 0f;
 
     Vector3 initialPosition = default( Vector3 );
 
     Vector3 target = default( Vector3 );
 
-    void OnValidate()
-    {
-        if( minRandomMagnitude > maxRandomMagnitude )
-            minRandomMagnitude = maxRandomMagnitude;
-        
-        if( maxRandomMagnitude < minRandomMagnitude )
-            maxRandomMagnitude = minRandomMagnitude;
-
-        if( minRandomYawAngle > maxRandomYawAngle )
-            minRandomYawAngle = maxRandomYawAngle;
-        
-        if( maxRandomYawAngle < minRandomYawAngle )
-            maxRandomYawAngle = minRandomYawAngle;
-    }
-
     public override void EnterBehaviour( float dt )
     {
         initialPosition = transform.position;
-        gun = GetComponent<S_Gun>();
+        gun = GetComponent<S_BulletGun>();
         shieldGun = GetComponent<S_ShieldGun>();
         S_World.events.Add(new Event(
             gameObject, 
@@ -100,7 +66,7 @@ public class AIShooter : CharacterAIBehaviour
 
     void Shield()
     {
-        shieldGun.StartBatch();
+        shieldGun.Shoot();
         S_World.events.Add(new Event(
             gameObject, 
             shieldToMoveTicks, 
@@ -111,7 +77,7 @@ public class AIShooter : CharacterAIBehaviour
 
     void Shoot()
     {
-        gun.StartBatch();
+        gun.Shoot();
         S_World.events.Add(new Event(
             gameObject, 
             shootToMoveTicks, 

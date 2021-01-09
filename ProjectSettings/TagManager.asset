@@ -37,6 +37,8 @@ TagManager:
   - Bullet
   - Shield
   - Block
+  - Explosion
+  - Power
   layers:
   - Default
   - TransparentFX
@@ -48,8 +50,8 @@ TagManager:
   - 
   - Player
   - Shields
-  - 
-  - 
+  - Enemies
+  - Bullets
   - 
   - 
   - 

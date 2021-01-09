@@ -4,11 +4,11 @@
     [
         {
             "coords": "t33",
-            "name": "Shooter"
+            "name": "Melee"
         },
         {
             "coords": "t11",
-            "name": "Shooter"
+            "name": "Melee"
         }
     ]
 }

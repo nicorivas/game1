@@ -1,0 +1,17 @@
+{
+    "powers":
+    [
+        {
+            "name": "PowerBlock",
+            "prob": 0.5
+        },
+        {
+            "name": "PowerMagma",
+            "prob": 0.5
+        },
+        {
+            "name": "PowerHeart",
+            "prob": 1
+        }
+    ]
+}

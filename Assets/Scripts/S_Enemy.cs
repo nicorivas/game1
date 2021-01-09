@@ -10,8 +10,6 @@ public class S_Enemy : MonoBehaviour
     Lightbug.CharacterControllerPro.Implementation.CharacterAIBehaviour AI;
     void Start()
     {
-        health = 100f;
-        score = 100;
         rangeCircle = Instantiate(Resources.Load("RangeCircle")) as GameObject;
         rangeCircle.transform.parent = this.transform;
         rangeCircle.transform.localPosition = new Vector3(0.0f,1.0f,0.0f);
@@ -39,6 +37,13 @@ public class S_Enemy : MonoBehaviour
     void Update()
     {
         ;
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Magma") {
+            Hurt(1000f);
+        }
     }
 
     private void OnCollisionEnter(Collision collision)

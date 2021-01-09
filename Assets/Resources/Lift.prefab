@@ -129,7 +129,7 @@ MonoBehaviour:
     cycleDuration: 2
     waitAtTheEnd: 1
     waitDuration: 1
-    direction: {x: 0, y: 1, z: 0}
+    direction: {x: 0, y: -1, z: 0}
     speed: 1
   rotationAction:
     enabled: 0

@@ -53,15 +53,10 @@ public class S_Level : MonoBehaviour
         if (levelData.height != null) {
             foreach (HeightCoords hdata in levelData.height) {
                 //S_Terrain.RiseTile(hdata.coords, hdata.height);
-                S_Terrain.SpawnBlock(S_Terrain.ParseCoords(hdata.coords));
+                S_Terrain.SinkTile(S_Terrain.ParseCoords(hdata.coords));
+                //S_Terrain.SpawnBlock(S_Terrain.ParseCoords(hdata.coords));
             }
         }
-
-        /*
-        if (burnRandomTiles) {
-            S_World.events.Add(new Event(gameObject, burnRandomTilesTicks, BurnRandomTile, variance_:burnRandomTilesTicksVariance));
-        }
-        */
     }
 
     public int GetEnemies() {

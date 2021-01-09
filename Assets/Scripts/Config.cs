@@ -36,6 +36,7 @@ public class Config : ScriptableObject
     static public string Bullets_Dir = "Bullets";
     static public string Enemies_Dir = "Enemies";
     static public string Levels_Dir = "Levels";
+    static public string Powers_Dir = "Powers";
     //
     static public int Default_Level_Max = 5;
     static public int Energy_Tick_Period = 100;
@@ -94,4 +95,6 @@ public class Config : ScriptableObject
     static public int Rock_Grassland_Life_Energy = 1;
     static public int Rock_Drain_Fire_Energy = 1;
     static public int Rock_In_Volcano_Fire_Energy = 2;
+    // UI
+    static public int Ticks_Description_Message = 20;
 }

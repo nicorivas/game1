@@ -13,12 +13,16 @@ public class AIWalker : CharacterAIBehaviour
     public enum movementTypes // your custom enumeration
     {
         random, 
-        diagonal
+        diagonal,
+        towardsPlayer
     };
     public movementTypes movementType = movementTypes.random;
     public int shootPeriodTicks, shootPeriodVarianceTicks;
-    public float angleVariance;
+    public float movementDirectionVariance;
+    public int movementDirectionRefreshTicks;
     public bool shoot;
+    public bool hurtOnTouch;
+    public float touchDamage;
     bool moving;
     S_Gun gun;
     S_ShieldGun shieldGun;
@@ -28,13 +32,22 @@ public class AIWalker : CharacterAIBehaviour
     public override void EnterBehaviour( float dt )
     {
         initialPosition = transform.position;
-        gun = GetComponent<S_Gun>();
+        gun = GetComponent<S_BulletGun>();
         shieldGun = GetComponent<S_ShieldGun>();
         S_World.events.Add(new Event(gameObject, 10, Move));
-        direction = new Vector3(1f,0f,1f);
         if (shoot) {
             S_World.events.Add(new Event(gameObject, 10, Shoot));
         }
+        // Initial direction
+        direction = new Vector3(1.0f,0.0f,1.0f);
+        if (movementType == movementTypes.diagonal) {
+            direction = Quaternion.AngleAxis(Random.Range(0,4)*90f,Vector3.up)*direction;
+        } else {
+            direction = Quaternion.AngleAxis(Random.Range(0f,360f),Vector3.up)*direction;
+        }
+        direction = direction.normalized;
+        // Direction movement
+        S_World.events.Add(new Event(gameObject, movementDirectionRefreshTicks, RefreshDirection));
     }
 
     void Move() {
@@ -48,29 +61,43 @@ public class AIWalker : CharacterAIBehaviour
 
     void Shield()
     {
-        shieldGun.StartBatch();
+        shieldGun.Shoot();
         S_World.events.Add(new Event(gameObject, 1, Move));
     }
 
     void Shoot()
     {
-        gun.StartBatch();
+        if (gun != null)
+            gun.Shoot();
         S_World.events.Add(new Event(gameObject, shootPeriodTicks + (int)(Random.value*shootPeriodVarianceTicks), Shoot));
+    }
+
+    void RefreshDirection() {
+        direction = Quaternion.AngleAxis(Random.Range(-movementDirectionVariance,movementDirectionVariance),Vector3.up)*direction;
+        direction = direction.normalized;
+        S_World.events.Add(new Event(gameObject, movementDirectionRefreshTicks, RefreshDirection));
     }
     
     public override void UpdateBehaviour( float dt )
     {
         if (moving) {
-            SetMovementAction(direction);
-            if (movementType == movementTypes.random) {
-                direction = Quaternion.AngleAxis(Random.Range(-angleVariance,angleVariance),Vector3.up)*direction;
+            if (movementType == movementTypes.towardsPlayer) {
+                GameObject player = GameObject.FindWithTag("Player");
+                Vector3 toPlayerDirection = (player.transform.position - gameObject.transform.position).normalized;
+                direction = toPlayerDirection;
             }
+            SetMovementAction(direction);
         }
     }
 
     public override void OnCollisionEnter(Collision collision) {
         if (collision.gameObject.tag == "TerrainBorder" || collision.gameObject.tag == "Block") {
             Bounce(collision.contacts[0].normal);
+        } else if (collision.gameObject.tag == "Player") {
+            if (hurtOnTouch) {
+                GameObject player = GameObject.FindWithTag("Player");
+                player.GetComponent<Player>().Hurt(touchDamage);
+            }
         }
     }
     

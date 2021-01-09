@@ -112,7 +112,13 @@ public class S_TerrainTile : MonoBehaviour
         lift.transform.position = gameObject.transform.position;
         SetHeight(height);
         speed = 1.0f;
+    }
 
+    public void Sink() {
+        lift = Instantiate(Resources.Load("Lift")) as GameObject;
+        lift.transform.position = gameObject.transform.position;
+        SetHeight(-1);
+        speed = -1.0f;
     }
 
     public void Stop() {
@@ -322,12 +328,15 @@ public class S_TerrainTile : MonoBehaviour
     }
 
     public void PlaceEnemy(GameObject enemy) {
-        Debug.Log("PlaceEnemy: "+gameObject.transform.position.x+" "+gameObject.transform.position.z);
         enemy.transform.position = new Vector3(gameObject.transform.position.x,3f,gameObject.transform.position.z);
     }
 
     public void PlacePortal(GameObject portal) {
         portal.transform.position = new Vector3(gameObject.transform.position.x,3f,gameObject.transform.position.z);
+    }
+
+    public void PlacePower(GameObject power) {
+        power.transform.position = new Vector3(gameObject.transform.position.x,1f,gameObject.transform.position.z);
     }
 
     public GameObject PlaceTerrainObject(GameObject terrainObject) {
@@ -421,8 +430,14 @@ public class S_TerrainTile : MonoBehaviour
     void FixedUpdate()
     {
         gameObject.transform.position += speed*Vector3.up*Time.deltaTime;
-        if (gameObject.transform.position.y > originalPosition.y + height*HEIGHT_DELTA) {
-            Stop();
+        if (speed > 0.0f) {
+            if (gameObject.transform.position.y > originalPosition.y + height*HEIGHT_DELTA) {
+                Stop();
+            }
+        } else {
+            if (gameObject.transform.position.y < originalPosition.y + height*HEIGHT_DELTA) {
+                Stop();
+            }
         }
     }
 

@@ -1,30 +1,30 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
     static GameObject objectHeld;
-    public static float shootRange = 40f;
+    public static float shootRange;
     public static List<GameObject> targets;
     static public float health;
     static public int maxHearts;
     public static Player instance;
     Vector3 originalPos;
+    S_Gun gun;
     void Awake()
     {
         maxHearts = 5;
         health = 3f;
+        shootRange = 5f;
     }
     void Start()
     {
-        LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
-        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        lineRenderer.widthMultiplier = 0.2f;
-        lineRenderer.positionCount = 2;
         targets = new List<GameObject>();
         instance = this;
         originalPos = gameObject.transform.position;
+        gun = GetComponent<S_Gun>();
     }
 
     static public float GetHealth()
@@ -43,6 +43,10 @@ public class Player : MonoBehaviour
         if (health <= 0) {
             GameOver();
         }
+    }
+
+    public void Heal(float heal) {
+        health += heal;
     }
 
     public void RestartLevel() {
@@ -90,8 +94,6 @@ public class Player : MonoBehaviour
     {
         if (other.tag == "Enemy") {
             Hit(other.gameObject);
-        } else if (other.tag == "Range") {
-            StartShoot(other.transform.parent.gameObject);
         } else if (other.tag == "Portal") {
             S_Director.NextLevel();
             Destroy(other.gameObject);
@@ -99,51 +101,28 @@ public class Player : MonoBehaviour
             if (other.GetComponent<S_TileDamage>().damageActive) {
                 Hurt(10f);
             };
+        } else if (other.tag == "Magma") {
+            Hurt(1000f);
+        } else if (other.tag == "Explosion") {
+            Hurt(1f);
         }
     }
 
-    private void OnTriggerExit(Collider other)
+    void StartShoot(GameObject target)
     {
-        if (other.tag == "Range") {
-            RemoveTarget(other.transform.parent.gameObject);
-        }
-    }
-
-    void StartShoot(GameObject target) {
         if (!targets.Contains(target)) {
             targets.Add(target);
-            GetComponent<LineRenderer>().positionCount = 2;
         }
     }
 
     public void RemoveTarget(GameObject target)
     {
         targets.Remove(target);
-        GetComponent<LineRenderer>().positionCount = 0;
-
     }
 
-    void Update() {
-        for (int i=targets.Count-1; i>=0; i--) {
-            LineRenderer lineRenderer = GetComponent<LineRenderer>();
-            lineRenderer.positionCount = 2;
-            bool shootable = true;
-            Vector3 originPosition = new Vector3(gameObject.transform.position.x, 2.0f, gameObject.transform.position.z);
-            Vector3 targetPosition = targets[i].transform.Find("Spot").transform.position;
-            float distance = (originPosition-targetPosition).magnitude;
-            RaycastHit[] hits = Physics.RaycastAll(originPosition, targetPosition-originPosition, distance);
-            foreach (RaycastHit hit in hits) {
-                if (hit.transform.gameObject.tag == "Shield") {
-                    shootable = false;
-                    lineRenderer.positionCount = 0;
-                }
-            }
-            if (shootable) {
-                lineRenderer.SetPosition(0, originPosition);
-                lineRenderer.SetPosition(1, targetPosition);
-                targets[i].GetComponent<S_Enemy>().Hurt();
-            }
-        }
+    void Update()
+    {
+        gun.Shoot();
     }
 
     void FixedUpdate()
